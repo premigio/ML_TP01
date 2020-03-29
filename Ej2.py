@@ -1,12 +1,26 @@
-def import_english_files():
+import pandas as pd
+import BayesNaive as bayes_naive
+
+
+def import_country_british(findout_country):
+    file_xlsx = './resources/PreferenciasBritanicos.xlsx'
+
+    data = pd.read_excel(file_xlsx, usecols='A:F', userows='2,14')
+
+    bayes = bayes_naive.BayesNaive(['I', 'E'])
+
+    all_prob = bayes.train(data, 5, -1)
+    print(all_prob)
+    # print(bayes.check(findout_country, all_prob,-1))
+
+
+def analyse_country_likings():
     findout_country = [1, 0, 1, 1, 0]
 
     df = open('./resources/PreferenciasBritanicos.csv', 'r')
     probability_per_country = [[0 for x in range(5)] for y in range(2)]
     total_probability = [0 for x in range(5)]
     indexes = [0 for x in range(2)]
-    index_i = 0
-    index_e = 0
     index = 0
     for preference_vectors_aux in df.readlines():
         if index > 0:
@@ -21,6 +35,7 @@ def import_english_files():
                 probability_per_country[country][i] += int(preference_vectors[i])
                 total_probability[i] += int(preference_vectors[i])
         index += 1
+    print(probability_per_country)
 
     for i in range(0, 5):
         probability_per_country[0][i] += 1
@@ -38,7 +53,7 @@ def import_english_files():
             if findout_country[j] != 0:
                 given_probability *= probability_per_country[i][j]
             else:
-                given_probability *= 1.0-probability_per_country[i][j]
+                given_probability *= 1.0 - probability_per_country[i][j]
 
         country_prob = float(given_probability) * indexes[i] / index
         print(country_prob)
@@ -51,4 +66,6 @@ def import_english_files():
     # hasta aca tengo todas las probabilidades
 
 
-import_english_files()
+analyse_country_likings()
+# findout_country = [1, 0, 1, 1, 0]
+# print(import_country_british(findout_country))
