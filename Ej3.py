@@ -50,7 +50,7 @@ for i in range(len(noticias)):
 bayes = BayesNaive.BayesNaive(categories_to_train)
 category_prob = bayes.train(noticias_aux, 2, 0)
 
-print(bayes.check(['Boca pegó el portazo', 'Olé'], category_prob, 0))
+print(bayes.check(['Alquileres congelados: inmobiliarias e inquilinos están de acuerdo con la medida y creen que se '
+                   'contemplaron los motivos de conflicto', 'Infobae.com'], category_prob, 0))
 
 # word_count_matrix = to_int_matrix(noticias, 1, True)
-
