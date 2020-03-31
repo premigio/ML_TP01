@@ -14,9 +14,8 @@ def import_country_british(findout_country):
     # print(bayes.check(findout_country, all_prob,-1))
 
 
-def analyse_country_likings():
-    findout_country = [1, 0, 1, 1, 0]
-
+def analyse_country_likings(findout_country):
+    global index
     df = open('./resources/PreferenciasBritanicos.csv', 'r')
     probability_per_country = [[0 for x in range(5)] for y in range(2)]
     total_probability = [0 for x in range(5)]
@@ -35,7 +34,7 @@ def analyse_country_likings():
                 probability_per_country[country][i] += int(preference_vectors[i])
                 total_probability[i] += int(preference_vectors[i])
         index += 1
-    print(probability_per_country)
+    #print(probability_per_country)
 
     for i in range(0, 5):
         probability_per_country[0][i] += 1
@@ -43,7 +42,7 @@ def analyse_country_likings():
         probability_per_country[1][i] += 1
         probability_per_country[1][i] /= float(indexes[1] + 2)
         total_probability[i] /= float(index - 1)
-    print(probability_per_country)
+    #print(probability_per_country)
 
     max_prob = 0.0
     max_country = 'No country'
@@ -56,16 +55,18 @@ def analyse_country_likings():
                 given_probability *= 1.0 - probability_per_country[i][j]
 
         country_prob = float(given_probability) * indexes[i] / index
-        print(country_prob)
         # me acelere el paso, despues meter mano aca
         max_prob = country_prob if max_prob < country_prob else max_prob
-        max_country = 'E' if max_prob <= country_prob and i == 1 else max_country
-        max_country = 'I' if max_prob <= country_prob and i == 0 else max_country
-    print(max_country)
+        max_country = 'Escoces' if max_prob <= country_prob and i == 1 else max_country
+        max_country = 'Ingles' if max_prob <= country_prob and i == 0 else max_country
+    return max_country, {'Ingles': probability_per_country[0], 'Escoces': probability_per_country[1]}
 
     # hasta aca tengo todas las probabilidades
 
 
-analyse_country_likings()
-# findout_country = [1, 0, 1, 1, 0]
-# print(import_country_british(findout_country))
+findout = [1, 0, 1, 1, 0]
+max_country_str, prob = analyse_country_likings(findout)
+print('la persona es probablemente ' + max_country_str)
+print(prob)
+
+# print(import_country_british(findout))

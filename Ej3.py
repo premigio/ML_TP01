@@ -1,6 +1,7 @@
 import pandas as pd
 import random
 import BayesNaive
+import matplotlib as plt
 
 
 # calculo de la matriz de confusion
@@ -42,9 +43,13 @@ def get_true_false_results(categories_to_train, classification_results):
 def prepare_roc_points(noticias_data, categories):
     tasa_vp_array = []
     tasa_fp_array = []
-    for division in range(2, 11):
+    tasa_roc_array = []
+
+    division_options = [len(noticias_data) // x for x in range(2, 5)]
+    division_options.append(40)
+    division_options.append(int(3/4 * len(noticias_data)))
+    for amount_now in division_options:
         random.shuffle(noticias_data)
-        amount_now = len(noticias_data) // division  # Floor division
 
         aux_set = list()
         for no in range(len(noticias_data)):
@@ -58,13 +63,9 @@ def prepare_roc_points(noticias_data, categories):
 
         results, total_results = confusion_matrix(test_set, category_proba, categories, new_bayes)
         tp, fp, tn, fn = get_true_false_results(categories, results)
-        print({i: tp[i] / (tp[i] + fn[i]) for i in categories})
-        print({i: fp[i] / (fp[i] + tn[i]) for i in categories})
-        tasa_vp_array.append({i: tp[i] / (tp[i] + fn[i]) for i in categories})
-        tasa_fp_array.append({i: fp[i] / (fp[i] + tn[i]) for i in categories})
-    print(tasa_vp_array)
-    print()
-
+        tasa_roc_array.append({i: [fp[i] / (fp[i] + tn[i]), tp[i] / (tp[i] + fn[i])] for i in categories})
+    print(tasa_roc_array)
+    
 
 categories = ["Nacional", "Destacadas", "Deportes", "Salud", "Ciencia y Tecnologia", "Entretenimiento", "Economia",
               "Noticias destacadas", "Internacional"]
@@ -108,11 +109,11 @@ f1score = {i: 2 * precision[i] * recall[i] / (precision[i] + recall[i]) for i in
 tasa_vp = {i: tp[i] / (tp[i] + fn[i]) for i in categories_to_train}
 tasa_fp = {i: fp[i] / (fp[i] + tn[i]) for i in categories_to_train}
 
-#prepare_roc_points(noticias, categories_to_train)
+prepare_roc_points(noticias, categories_to_train)
 
-print(accuracy)
-print(precision)
-print(recall)
-print(f1score)
-print(tasa_vp)
-print(tasa_fp)
+# print(accuracy)
+# print(precision)
+# print(recall)
+# print(f1score)
+# print(tasa_vp)
+# print(tasa_fp)
