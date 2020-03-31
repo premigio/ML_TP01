@@ -1,4 +1,6 @@
 import pandas as pd
+import seaborn as sn
+import matplotlib.pyplot as plt
 import random
 import BayesNaive
 
@@ -97,6 +99,25 @@ category_prob = bayes.train(noticias_train, 2, 0)
 
 classification_results, total = confusion_matrix(noticias_test, category_prob, categories_to_train, bayes)
 
+
+m_confussion = [[0.0 for i in range(0, len(classification_results.keys()))] for j in range(0, len(classification_results.keys()))]
+print(classification_results)
+i = 0
+for key in sorted(classification_results.keys()):
+    values = classification_results[key]
+    j = 0
+    for k in sorted(classification_results.keys()):
+        m_confussion[i][j]= values[k]
+        j += 1
+    i += 1
+
+df_cm = pd.DataFrame(m_confussion, index = [i for i in sorted(classification_results.keys())],
+                  columns = [i for i in sorted(classification_results.keys())])
+plt.figure(figsize = (10,7))
+sn.heatmap(df_cm, annot=True,  fmt='g')
+plt.show()
+
+
 tp, fp, tn, fn = get_true_false_results(categories_to_train, classification_results)
 
 # calculo de precision, accuracy, tasa de v positivos, de f positivos y F1-score
@@ -108,7 +129,7 @@ f1score = {i: 2 * precision[i] * recall[i] / (precision[i] + recall[i]) for i in
 tasa_vp = {i: tp[i] / (tp[i] + fn[i]) for i in categories_to_train}
 tasa_fp = {i: fp[i] / (fp[i] + tn[i]) for i in categories_to_train}
 
-#prepare_roc_points(noticias, categories_to_train)
+# prepare_roc_points(noticias, categories_to_train)
 
 print(accuracy)
 print(precision)
