@@ -3,7 +3,6 @@ import seaborn as sn
 import matplotlib.pyplot as plt
 import random
 import BayesNaive
-import matplotlib as plt
 
 
 # calculo de la matriz de confusion
