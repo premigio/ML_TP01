@@ -91,4 +91,4 @@ def probabilidadCondicional(condProb ,prob, condition):
 
 
 print(probabilidadCondicional(getConditionalProbabilities(getData()), {"admit": 1}, {"rank": 2, "gre": 0, "gpa": 1}))
-print(probabilidadCondicional(getConditionalProbabilities(getData()), {"admit": 0}, {}))
+print(probabilidadCondicional(getConditionalProbabilities(getData()), {"admit": 0}, {"rank": 1}))
