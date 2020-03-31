@@ -63,11 +63,11 @@ admit_table = calculate_probability_table(admission_data, 0,
 gre_table = calculate_probability_table(admission_data, 1, {3: [1, 2, 3, 4]})  # P(gre | rank)
 gpa_table = calculate_probability_table(admission_data, 2, {3: [1, 2, 3, 4]})  # P(gpa | rank)
 rank_table = calculate_probability_table(admission_data, 3, {})  # P(rank)
-admit_prob_table = calculate_probability_table(admission_data, 0, {}) # P(admit)
+admit_prob_table = calculate_probability_table(admission_data, 0, {})  # P(admit)
 print(admit_table)
 print(admit_prob_table)
 # a) P(admit = 0 | rank = 1)
-print(admit_table[tuple(['gre_below', 'gpa_above', 2])].get(0, 0.0)) #tamal
+print(admit_table[tuple(['gre_below', 'gpa_above', 2])].get(0, 0.0))  # tamal
 
 # b) P(admit = 1 | rank = 2, GPA = 3.5, GRE = 450) esta bien que de 0 ?
 # print(admit_table[tuple(['gre_below', 'gpa_above', 2])].get(1, 0.0) * )

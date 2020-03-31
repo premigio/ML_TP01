@@ -44,7 +44,7 @@ class BayesNaive:
             for key in self.word_array[cat].keys():
                 self.word_array[cat][key] += 1
                 self.word_array[cat][key] /= float(self.word_index_count[cat] + len(self.word_array[cat]))
-        print(probability_per_category)
+        # print(probability_per_category)
         return probability_per_category
 
     def check(self, find_out, probability_per_category, text_index):
@@ -54,7 +54,9 @@ class BayesNaive:
             given_probability = 1.0
             for j in range(len(find_out) - 1):
                 if j != text_index:
-                    given_probability *= probability_per_category[i][j][find_out[j]]  # P(D|h)
+                    probability = probability_per_category[i][j].get(find_out[j], 1 / (self.indexes[i] + len(
+                        self.categories)))  # se suma las cats?
+                    given_probability *= probability  # P(D|h)
                 else:  # calculo la probabilidad de las palabras en el coso
                     words = find_out[j].split()
                     for word in words:
@@ -67,7 +69,7 @@ class BayesNaive:
 
             class_prob = self.indexes[i] / self.index  # probabilidad de la clasificacion P(h)
             classification_probability = float(given_probability) * class_prob
-            print(classification_probability)
+            # print(classification_probability)
             # me acelere el paso, despues meter mano aca. wtf?? no me acuerdo mas de este comment
             max_prob = classification_probability if max_prob < classification_probability else max_prob
             final_classification = self.categories[
