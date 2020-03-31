@@ -3,32 +3,73 @@ import random
 import BayesNaive
 
 
-# def to_int_matrix(noticias, index, text):
-#     array = set()
-#     for noticia in noticias:
-#         if text:
-#             for word in noticia[index].split():
-#                 array.add(word)
-#         else:
-#             array.add(noticia[index])
-#
-#     array = list(array)
-#
-#     matrix = [[0 for j in range(len(array))] for k in range(len(noticias))]
-#
-#     for noticia in noticias:
-#         if text:
-#             for word in noticia[index].split():
-#                 matrix[noticias.index(noticia)][array.index(word)] += 1
-#         else:
-#             matrix[noticias.index(noticia)][array.index(noticia[index])] += 1
-#     return matrix
+# calculo de la matriz de confusion
+def confusion_matrix(test_noticias, probabilities, train_categories, this_bayes):
+    results = {}
+
+    total = 0
+    for noticia in test_noticias:
+        if noticia[2] in train_categories:
+            result, prob = this_bayes.check([noticia[0], noticia[1]], probabilities, 0)
+            results[noticia[2]] = results.get(noticia[2], {})
+            results[noticia[2]][result] = results[noticia[2]].get(result, 0) + 1
+            total += 1
+    return results, total
+
+
+def get_true_false_results(categories_to_train, classification_results):
+    true_positive = {}
+    false_positive = {}
+    true_negative = {}
+    false_negative = {}
+    for cat in categories_to_train:
+        for i in classification_results.keys():
+            for j in classification_results.keys():
+                if classification_results[i].get(j, 0) == 0:
+                    classification_results[i][j] = 0
+                if i == cat:
+                    if i == j:
+                        true_positive[cat] = true_positive.get(cat, 0) + classification_results[i][j]
+                    else:
+                        false_negative[cat] = false_negative.get(cat, 0) + classification_results[i][j]
+                elif j == cat:
+                    false_positive[cat] = false_positive.get(cat, 0) + classification_results[i][j]
+                else:
+                    true_negative[cat] = true_negative.get(cat, 0) + classification_results[i][j]
+    return true_positive, false_positive, true_negative, false_negative
+
+
+def prepare_roc_points(noticias_data, categories):
+    tasa_vp_array = []
+    tasa_fp_array = []
+    for division in range(2, 11):
+        random.shuffle(noticias_data)
+        amount_now = len(noticias_data) // division  # Floor division
+
+        aux_set = list()
+        for no in range(len(noticias_data)):
+            aux_set.append(noticias_data[no][1:])
+
+        train_set = aux_set[:amount_now]
+        test_set = aux_set[amount_now:]
+
+        new_bayes = BayesNaive.BayesNaive(categories)
+        category_proba = new_bayes.train(train_set, 2, 0)
+
+        results, total_results = confusion_matrix(test_set, category_proba, categories, new_bayes)
+        tp, fp, tn, fn = get_true_false_results(categories, results)
+        print({i: tp[i] / (tp[i] + fn[i]) for i in categories})
+        print({i: fp[i] / (fp[i] + tn[i]) for i in categories})
+        tasa_vp_array.append({i: tp[i] / (tp[i] + fn[i]) for i in categories})
+        tasa_fp_array.append({i: fp[i] / (fp[i] + tn[i]) for i in categories})
+    print(tasa_vp_array)
+    print()
 
 
 categories = ["Nacional", "Destacadas", "Deportes", "Salud", "Ciencia y Tecnologia", "Entretenimiento", "Economia",
               "Noticias destacadas", "Internacional"]
-categories_to_delete = ["Nacional", "Salud", "Ciencia y Tecnologia", "Noticias destacadas", "Internacional"]
-categories_to_train = ["Destacadas", "Deportes", "Entretenimiento", "Economia"]
+categories_to_delete = ["Nacional", "Ciencia y Tecnologia", "Noticias destacadas", "Destacadas", "Salud"]
+categories_to_train = ["Internacional", "Deportes", "Entretenimiento", "Economia"]
 
 file_xlsx = './resources/Noticias_argentinas.xlsx'
 
@@ -41,16 +82,37 @@ column_names = data_frame.columns.values
 noticias = data_frame.values.tolist()
 
 random.shuffle(noticias)
-quarter = len(noticias) // 4  # Floor division
-noticias = noticias[:quarter]
+quarter = 3 * len(noticias) // 4  # Floor division
+
 noticias_aux = list()
+
 for i in range(len(noticias)):
     noticias_aux.append(noticias[i][1:])
 
+noticias_train = noticias_aux[:quarter]
+noticias_test = noticias_aux[quarter:]
+
 bayes = BayesNaive.BayesNaive(categories_to_train)
-category_prob = bayes.train(noticias_aux, 2, 0)
+category_prob = bayes.train(noticias_train, 2, 0)
 
-print(bayes.check(['Alquileres congelados: inmobiliarias e inquilinos están de acuerdo con la medida y creen que se '
-                   'contemplaron los motivos de conflicto', 'Infobae.com'], category_prob, 0))
+classification_results, total = confusion_matrix(noticias_test, category_prob, categories_to_train, bayes)
 
-# word_count_matrix = to_int_matrix(noticias, 1, True)
+tp, fp, tn, fn = get_true_false_results(categories_to_train, classification_results)
+
+# calculo de precision, accuracy, tasa de v positivos, de f positivos y F1-score
+
+accuracy = {i: (tp[i] + tn[i]) / (tp[i] + tn[i] + fp[i] + fn[i]) for i in categories_to_train}
+precision = {i: tp[i] / (tp[i] + fp[i]) for i in categories_to_train}
+recall = {i: tp[i] / (tp[i] + fn[i]) for i in categories_to_train}
+f1score = {i: 2 * precision[i] * recall[i] / (precision[i] + recall[i]) for i in categories_to_train}
+tasa_vp = {i: tp[i] / (tp[i] + fn[i]) for i in categories_to_train}
+tasa_fp = {i: fp[i] / (fp[i] + tn[i]) for i in categories_to_train}
+
+#prepare_roc_points(noticias, categories_to_train)
+
+print(accuracy)
+print(precision)
+print(recall)
+print(f1score)
+print(tasa_vp)
+print(tasa_fp)
