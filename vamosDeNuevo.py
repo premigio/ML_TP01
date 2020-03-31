@@ -40,13 +40,18 @@ def getConditionalProbabilities(data):
     frequencies_nominator = {}
     frequencies_denominator = {}
     for node in nodes:  # por cada nodo
-        frequencies_denominator[node] = {}
         for val in values[node]:  # por cada variable del nodo
             tuple = (node, val)
             frequencies_nominator[tuple] = {}
-            for combination in permuteParentsValues(node): # padres **
+            for combination in permuteParentsValues(node):  # padres **
                 frequencies_nominator[tuple][combination] = 0
-                frequencies_denominator[node][combination] = 0
+                frequencies_denominator[combination] = 0
+
+    distinct_parents = []
+    for vals in parents.values():
+        if vals not in distinct_parents:
+            distinct_parents.append(vals)
+
     # contabilizacion de frecuencias
     for row in data:
         for node_, parents_ in parents.items():
@@ -55,13 +60,18 @@ def getConditionalProbabilities(data):
             for parent in parents_:
                 tupleParents = (*tupleParents, row[parent])
             frequencies_nominator[tupleNode][tupleParents] += 1
-            frequencies_denominator[node_][tupleParents] += 1
+        for dparents in distinct_parents:
+            tupleParents = ()
+            for parent in dparents:
+                tupleParents = (*tupleParents, row[parent])
+            frequencies_denominator[tupleParents] += 1
+
     # probabilidades condicionales
     probabilities = {}
     for k in frequencies_nominator:
         probabilities[k] = {}
         for v in frequencies_nominator[k]:
-            probabilities[k][v] = float(frequencies_nominator[k][v] + 1) / float(frequencies_denominator[k[0]][v] + 1) # aplico laplace (esta bien hacerlo aca?)
+            probabilities[k][v] = float(frequencies_nominator[k][v] + 1) / float(frequencies_denominator[v] + 1) # aplico laplace (esta bien hacerlo aca?)
     return probabilities
 
 
