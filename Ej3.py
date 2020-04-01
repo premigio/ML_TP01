@@ -77,7 +77,7 @@ def prepare_roc_points(noticias_data, categories):
         plt.plot(xs, ys)
     plt.ylabel("Tasa verdadero positivo")
     plt.xlabel("Tasa falso positivo")
-    plt.title("ROC curve")
+    plt.title("Ejercicio 3, d: curva ROC")
     plt.show()
 
 
@@ -116,7 +116,6 @@ classification_results, total = confusion_matrix(noticias_test, category_prob, c
 
 
 m_confussion = [[0.0 for i in range(0, len(classification_results.keys()))] for j in range(0, len(classification_results.keys()))]
-print(classification_results)
 i = 0
 for key in sorted(classification_results.keys()):
     values = classification_results[key]
@@ -130,6 +129,7 @@ df_cm = pd.DataFrame(m_confussion, index = [i for i in sorted(classification_res
                   columns = [i for i in sorted(classification_results.keys())])
 plt.figure(figsize = (10,7))
 sn.heatmap(df_cm, annot=True,  fmt='g')
+plt.title('Ejercicio 3, b: Matriz de confusion')
 plt.show()
 
 
@@ -146,10 +146,24 @@ tasa_fp = {i: fp[i] / (fp[i] + tn[i]) for i in categories_to_train}
 
 prepare_roc_points(noticias, categories_to_train)
 
+def printDic(dic):
+    for key, value in dic.items():
+        print(str(key) + ": " + str(value))
 
-# print(accuracy)
-# print(precision)
-# print(recall)
-# print(f1score)
-# print(tasa_vp)
-# print(tasa_fp)
+print('........................Ejercicio 3, c........................')
+print()
+print('=> Exactitud:')
+printDic(accuracy)
+print()
+print('=> Precision:')
+printDic(precision)
+print()
+print('=> Tasa de Verdaderos Positivos:')
+printDic(tasa_vp)
+print()
+print('=> Tasa de Falsos Positivos:')
+printDic(tasa_fp)
+print()
+print('=> Puntaje F1:')
+printDic(f1score)
+print()

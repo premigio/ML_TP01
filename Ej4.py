@@ -1,75 +1,116 @@
-import BayesNaive
+# Arbol de bayes
+parents = {"rank": [], "gre": ["rank"], "gpa": ["rank"], "admit": ["rank", "gre", "gpa"]}  # relaciones de padres
+values = {"admit": [0, 1], "gre": [0, 1], "gpa": [0, 1], "rank": [1, 2, 3, 4]}  # valores posibles de las variables
+nodes = ["admit", "gre", "gpa", "rank"]  # nodos
 
 
-def import_data():
-    # retorna los datos pero con la data discretizada en un array
-    df = open('./resources/Admision.csv', 'r')
-
-    index = 0
-    aux = df.readlines()
-    data = [[] for i in range(len(aux) - 1)]  # me armo la lista como deberia tener para bayes
-    for admission_line in aux:
-        line = admission_line.split(',')
-        if index:
-            data[index - 1] = [None for i in range(len(line))]
-            for i in range(len(line)):
-                if i == 0 or i == 3:  # case admit | rank
-                    data[index - 1][i] = int(line[i])
-                if i == 1:  # case gre
-                    data[index - 1][i] = 'gre_above' if float(line[i]) >= 500 else 'gre_below'
-                if i == 2:  # case gpa
-                    data[index - 1][i] = 'gpa_above' if float(line[i]) >= 3 else 'gpa_below'
-        index += 1
-    return data, index - 1
+# Normalizacion de la data
+def getData():
+    data = []
+    with open('./resources/Admision.csv', 'r') as data_file:
+        data_file.readline()
+        for line in data_file:
+            line = line.split(',')
+            admit = int(line[0])
+            gre = 1 if float(line[1]) >= 500 else 0
+            gpa = 1 if float(line[2]) >= 3 else 0
+            rank = int(line[3])
+            data.append({"admit": admit, "gre": gre, "gpa": gpa, "rank": rank})
+    return data
 
 
-def calculate_probability_table(data, node, parents):
-    # nodo es la columna en data que representa al gpa, gre, rank, admit
-    # Parents un dict de cuales son los padres para ver la relacion y cuales son las posibles cosas
-    # retorno la diccionario de probabilidades equivalente a todos los P(nodo = x | parentA = a, parentB = b ... ) para todos x,a,b, etc en su dominio
-    aux = [len(x) for x in parents.values()]
-    possibilities = 1
-    for i in aux:
-        possibilities *= i
-    parent_array = {}
-    index_array = {}
-
-    for i in range(len(data)):
-        aux = []
-        for j in parents.keys():
-            aux.append(data[i][j])
-        p_tuple = tuple(aux)
-        parent_array[p_tuple] = parent_array.get(p_tuple, {data[i][node]: 0.0})
-        parent_array[p_tuple][data[i][node]] = parent_array[p_tuple].get(data[i][node], 0.0) + 1.0
-        index_array[p_tuple] = index_array.get(p_tuple, 0) + 1
-
-    for tupl in parent_array.keys():
-        for key in parent_array[tupl].keys():
-            parent_array[tupl][key] /= float(index_array[tupl])
-        if not any(parents):
-            return parent_array[tupl]
-    return parent_array
+def product(*args):
+    pools = [tuple(pool) for pool in args]
+    result = [[]]
+    for pool in pools:
+        result = [x+[y] for x in result for y in pool]
+    for product in result:
+        yield tuple(product)
 
 
-admission_data, data_amount = import_data()
+def permuteParentsValues(node):
+    aux = {}
+    for parent in parents[node]:
+        aux[parent] = values[parent]
+    return [tuple(v) for v in product(*aux.values())]
 
-admit_table = calculate_probability_table(admission_data, 0,
-                                          {
-                                              1: ['gre_above', 'gre_below'],
-                                              2: ['gpa_above', 'gpa_below'],
-                                              3: [1, 2, 3, 4]
-                                          })  # P(admit | gre,gpa,rank)
 
-gre_table = calculate_probability_table(admission_data, 1, {3: [1, 2, 3, 4]})  # P(gre | rank)
-gpa_table = calculate_probability_table(admission_data, 2, {3: [1, 2, 3, 4]})  # P(gpa | rank)
-rank_table = calculate_probability_table(admission_data, 3, {})  # P(rank)
-admit_prob_table = calculate_probability_table(admission_data, 0, {})  # P(admit)
-print(admit_table)
-print(admit_prob_table)
-# a) P(admit = 0 | rank = 1)
-print(admit_table[tuple(['gre_below', 'gpa_above', 2])].get(0, 0.0))  # tamal
+def getConditionalProbabilities(data):
+    # inicializamos diccionarios de frecuencias
+    frequencies_nominator = {}
+    frequencies_denominator = {}
+    for node in nodes:  # por cada nodo
+        for val in values[node]:  # por cada variable del nodo
+            tuple = (node, val)
+            frequencies_nominator[tuple] = {}
+            for combination in permuteParentsValues(node):  # padres **
+                frequencies_nominator[tuple][combination] = 0
+                frequencies_denominator[combination] = 0
 
-# b) P(admit = 1 | rank = 2, GPA = 3.5, GRE = 450) esta bien que de 0 ?
-# print(admit_table[tuple(['gre_below', 'gpa_above', 2])].get(1, 0.0) * )
+    distinct_parents = []
+    for vals in parents.values():
+        if vals not in distinct_parents:
+            distinct_parents.append(vals)
 
-# falta el c) creo que es aprendizaje parametrico pues ya nos dan la estructura, pero anda a saber
+    # contabilizacion de frecuencias
+    for row in data:
+        for node_, parents_ in parents.items():
+            tupleNode = (node_, row[node_])
+            tupleParents = ()
+            for parent in parents_:
+                tupleParents = (*tupleParents, row[parent])
+            frequencies_nominator[tupleNode][tupleParents] += 1
+        for dparents in distinct_parents:
+            tupleParents = ()
+            for parent in dparents:
+                tupleParents = (*tupleParents, row[parent])
+            frequencies_denominator[tupleParents] += 1
+
+    # probabilidades condicionales
+    probabilities = {}
+    for k in frequencies_nominator:
+        probabilities[k] = {}
+        for v in frequencies_nominator[k]:
+            probabilities[k][v] = float(frequencies_nominator[k][v] + 1) / float(frequencies_denominator[v] + 1) # aplico laplace (esta bien hacerlo aca?)
+    return probabilities
+
+
+def probabilidadConjunta(conditionalProbabilities_, nodes_):
+    aux = {}
+    for node, vals in values.items():
+        if node in nodes_:
+            aux[node] = [nodes_[node]]
+        else:
+            aux[node] = vals
+    aux = [dict(zip(aux, v)) for v in product(*aux.values())]
+    ret = 0
+    for d in aux:
+        ret_aux = 1
+        for node, value in d.items():
+            tupleNode = (node, value)
+            tupleParents = ()
+            for parent in parents[node]:
+                tupleParents = (*tupleParents, d[parent])
+            ret_aux *= conditionalProbabilities_[tupleNode][tupleParents]
+        ret += ret_aux
+    return ret
+
+
+def probabilidadCondicional(condProb ,prob, condition):
+    return probabilidadConjunta(condProb, {**prob, **condition}) / probabilidadConjunta(condProb, condition)
+
+
+probabilities = getConditionalProbabilities(getData())
+
+print('........................Ejercicio 4, a........................\n')
+p_val = probabilidadCondicional(probabilities, {"admit": 0}, {"rank": 1})
+print("=> P(admit:0 | rank:1): " + str(p_val))
+
+print()
+print('........................Ejercicio 4, b........................\n')
+p_val = probabilidadCondicional(probabilities, {"admit": 1}, {"rank": 2, "gre": 0, "gpa": 1})
+print("=> P(admit:1 | rank:1, gre:0, gpa:1): " + str(p_val))
+
+print()
+print('........................Ejercicio 4, c........................\n')
+print('Proceso de aprendizaje de tipo parametrico. Consiste en calcular las probabilidades a priori de los nodos raíz y las probabilidades condicionales de las demás variables dados sus padres')
