@@ -49,6 +49,7 @@ def prepare_roc_points(noticias_data, categories):
     division_options = [len(noticias_data) // x for x in range(2, 5)]
     division_options.append(40)
     division_options.append(int(3/4 * len(noticias_data)))
+    graph_values = {}
     for amount_now in division_options:
         random.shuffle(noticias_data)
 
@@ -64,8 +65,22 @@ def prepare_roc_points(noticias_data, categories):
 
         results, total_results = confusion_matrix(test_set, category_proba, categories, new_bayes)
         tp, fp, tn, fn = get_true_false_results(categories, results)
-        tasa_roc_array.append({i: [fp[i] / (fp[i] + tn[i]), tp[i] / (tp[i] + fn[i])] for i in categories})
-    print(tasa_roc_array)
+        for key in categories:
+            graph_values[key] = graph_values.get(key, {})
+            graph_values[key]['x'] = graph_values[key].get('x', [])
+            graph_values[key]['x'].append(fp[key] / (fp[key] + tn[key]))
+            graph_values[key]['y'] = graph_values[key].get('y', [])
+            graph_values[key]['y'].append(tp[key] / (tp[key] + fn[key]))
+            tasa_roc_array.append({i: [fp[i] / (fp[i] + tn[i]), tp[i] / (tp[i] + fn[i])] for i in categories})
+    for key in categories:
+        xs, ys = zip(*sorted(zip(graph_values[key]['x'], graph_values[key]['y'])))
+        plt.plot(xs, ys)
+    plt.ylabel("Tasa verdadero positivo")
+    plt.xlabel("Tasa falso positivo")
+    plt.title("ROC curve")
+    plt.show()
+
+
     
 
 categories = ["Nacional", "Destacadas", "Deportes", "Salud", "Ciencia y Tecnologia", "Entretenimiento", "Economia",
